@@ -1,3 +1,12 @@
+function formatShortcuts(sc) {
+  if (Object.keys(sc).length === 0) return ""; // Corrected empty object check
+  res = ""
+  for (s in sc) {
+    res += `\n   ${s} - ${sc[s]}`
+  } 
+  return res 
+}
+
 function formatDate(date) {
   var day = String(date.getDate()).padStart(2, '0'); 
   var month = String(date.getMonth() + 1).padStart(2, '0'); 
@@ -5,10 +14,11 @@ function formatDate(date) {
   return day + '/' + month + '/' + year; 
 }
 
-function getField(ui, prompt, defaultValue) {
+function getField(ui, prompt, defaultValue, shortcuts = {}) {
   var fieldPrompt = ui.prompt(prompt, ui.ButtonSet.OK_CANCEL);
-  if (fieldPrompt.getSelectedButton() != ui.Button.OK) return; 
+  if (fieldPrompt.getSelectedButton() != ui.Button.OK) throw new Error("Cancel Invoked"); 
   var fieldName = fieldPrompt.getResponseText();
+  if (shortcuts[fieldName]) return shortcuts[fieldName]
   if (!fieldName) return defaultValue;
   return fieldName
 }
@@ -20,19 +30,51 @@ function addApplicationRow(quick) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var range = sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()); // Adjust this if needed
   
-  positionName = getField(ui, "Enter Position Name", "null");
+
+  const positionShortcuts = {
+    "1" : "Software Development Intern",
+    "2" : "Data Science Intern",
+    "3" : `"Technology" Intern`,
+    "4" : "Quantitative Intern"
+  }
+
+  const locationShortcuts = {
+    "1" : "New York, NY"
+  }
+
+  let defaultValues = []
+  try {
+    defaultValues = [
+      getField(ui, "Enter Position Name: " + formatShortcuts(positionShortcuts), "null", positionShortcuts),
+      getField(ui, "Enter Employer Name", "null"),
+      quick ? "null" : getField(ui, "Enter Relevant Link", "null"),
+      quick ? "Pending" : getField(ui, "Enter ApplicationStatus", "null"),
+      quick ? "null" : getField(ui, "Enter Action Required", "null"),
+      quick ? "Applied" : getField(ui, "Enter Interviews Completed", "null"),
+      formatDate(new Date()),
+      getField(ui, "Enter Location", "null", locationShortcuts),
+      quick ? "null" : getField(ui, "Enter Pay Rate", "null"),
+      quick ? "null" : getField(ui, "Enter Contact", "null"),
+      quick ? "null" : getField(ui, "Enter Notes", "null")
+    ]
+  } catch (e) { // cancel invoked 
+    return
+  }
+  /*
+  positionName = getField(ui, "Enter Position Name: " + formatShortcuts(positionShortcuts), "null", positionShortcuts);
   employerName = getField(ui, "Enter Employer Name", "null");
   link = quick ? "null" : getField(ui, "Enter Relevant Link", "null");
   status = quick ? "Pending" : getField(ui, "Enter ApplicationStatus", "null");
+  actionReq = quick ? "null" : getField(ui, "Enter Action Required", "null")
   timeline = quick ? "Applied" : getField(ui, "Enter Interviews Completed", "null");
   date = formatDate(new Date());
-  location = getField(ui, "Enter Location", "null");
+  location = getField(ui, "Enter Location", "null", locationShortcuts);
   payRate = quick ? "null" : getField(ui, "Enter Pay Rate", "null");
   contact = quick ? "null" : getField(ui, "Enter Contact", "null");
   notes = quick ? "null" : getField(ui, "Enter Notes", "null");
+  */
 
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var defaultValues = [positionName, employerName, link, status, timeline, date, location, payRate, contact, notes]; 
   sheet.appendRow(defaultValues);
 
   var lastRowRange = sheet.getRange(sheet.getLastRow(), 1, 1, sheet.getLastColumn());
@@ -70,6 +112,9 @@ function formatSheet() {
       case "Offer Received":
         rowRange.setBackground("#d4edda"); // Light green
         break;
+      case "Action Required":
+        rowRange.setBackground("#f2c2f1"); // Light purple
+        break;
       default:
         rowRange.setBackground("white"); // Default background
         break;
@@ -92,5 +137,5 @@ function onOpen() {
       .addItem('Add Application (Detailed)', 'addApplicationRowDetailed')
       .addItem('Format Spreadsheet', 'formatSheet')
       .addToUi();
-}
+} 
 
