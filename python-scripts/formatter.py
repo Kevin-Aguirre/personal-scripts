@@ -39,7 +39,6 @@ def create_pdf(formatted_pdf_text, output_path = "KevinAguirre_coverletter.pdf")
 	flowables = []
 
 	lines = formatted_pdf_text.split('\n')
-	print(lines)
 
 	for i, line in enumerate(lines):
 		paragraph = None
