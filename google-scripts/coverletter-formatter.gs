@@ -1,4 +1,6 @@
-
+function escapeForRegex(text) {
+  return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
 
 function getDate() {
   var date = new Date()
@@ -42,9 +44,38 @@ function formatTemplate() {
   change(body, "\\[POSITION\\]", position)
 }
 
+function revertTemplate() {
+  var ui = DocumentApp.getUi();
+  var doc = DocumentApp.getActiveDocument();
+  var body = doc.getBody();
+  var text = body.getText();
+  
+  // new 
+  var lines = text.split('\n');
+  var words = text.split(' ')
+
+  change(body, lines[3],"[DATE]")
+  change(body, lines[5],"[COMPANY NAME]")
+  change(body, lines[6],"[COMPANY ADDRESS LINE 1]")
+  change(body, lines[7],"[COMPANY ADDRESS LINE 2]")
+
+  var startPositionInd = words.findIndex(word => word === "successful") + 1
+
+  res = ""
+  while (words[startPositionInd] != "at") {
+    res += words[startPositionInd] + " "
+    startPositionInd += 1
+  }
+
+  res = res.trim()
+  change(body, res, "[POSITION]")
+
+}
+
 function onOpen() {
   var ui = DocumentApp.getUi();
   ui.createMenu('Cover Letter Formatter')
       .addItem('Format Template', 'formatTemplate')
+      .addItem('Revert to Template', 'revertTemplate')
       .addToUi();
 }
