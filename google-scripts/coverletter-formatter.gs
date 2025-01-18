@@ -1,81 +1,87 @@
-function escapeForRegex(text) {
-  return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-}
+from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+import sys
 
-function getDate() {
-  var date = new Date()
-  var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  var day = date.getDate();
-  var month = months[date.getMonth()];  
-  var year = date.getFullYear();  
+def format_template_for_company(pdfText, arguments):
+	curr_date = datetime.now()
+	formatted_date = curr_date.strftime("%B %-d, %Y")
 
-  var formattedDate = month + " " + day + ", " + year;
-  return formattedDate
-}
+	comp_name, addr_line1, addr_line2, position = arguments[1], arguments[2], arguments[3], arguments[4]
+	newTxt = pdfText.replace("[COMPANY NAME]", comp_name).replace("[COMPANY ADDRESS LINE 1]", addr_line1).replace("[COMPANY ADDRESS LINE 2]", addr_line2).replace("[POSITION]", position).replace("[DATE]", formatted_date)
+	return newTxt
 
-function getField(ui, prompt, defaultValue) {
-  var fieldPrompt = ui.prompt(prompt, ui.ButtonSet.OK_CANCEL);
-  if (fieldPrompt.getSelectedButton() != ui.Button.OK) return; 
-  var fieldName = fieldPrompt.getResponseText();
-  if (!fieldName) return defaultValue;
-  return fieldName
-}
+def create_pdf(formatted_pdf_text, output_path = "KevinAguirre_coverletter.pdf"):
+	document = SimpleDocTemplate(output_path, pagesize=letter)
+	styles = getSampleStyleSheet()
+		# Define a centered style
+	centered_style = styles['Normal'].clone('CenteredStyle')
+	centered_style.alignment = 1  # 1 for center alignment
+	centered_style.fontName = "Times-Roman"
+	centered_style.leading = 14
+	centered_style.fontSize = 28  # Set font size for centered text
 
-function change(body, oldText, newText) {
-  body.replaceText(oldText, newText)
-}
+	    # Define a right-aligned style
+	right_aligned_style = styles['Normal'].clone('RightAlignedStyle')
+	right_aligned_style.alignment = 2  # 2 for right alignment
+	right_aligned_style.fontName = "Times-Roman"
+	right_aligned_style.leading = 14
+	right_aligned_style.fontSize = 12  # Set font size for right-aligned text
 
-function formatTemplate() {
-  var ui = DocumentApp.getUi();
-  var doc = DocumentApp.getActiveDocument()
-  var body = doc.getBody()
 
-  var date = getDate()
-  var companyName = getField(ui, "Enter Company Name", "[COMPANY NAME]")
-  var addressLine1 = getField(ui, "Enter Company Address Line 1", "[COMPANY ADDRESS LINE 1]")
-  var addressLine2 = getField(ui, "Enter Company Address Line 2", "[COMPANY ADDRESS LINE 2]")
-  var position = getField(ui, "Enter Position", "[POSITION]")
+	default_style = styles['Normal']
+	default_style.fontName = "Times-Roman"
+	default_style.fontSize = 12
+	default_style.leading = 14
 
-  change(body, "\\[DATE\\]", date)
-  change(body, "\\[COMPANY NAME\\]", companyName)
-  change(body, "\\[COMPANY ADDRESS LINE 1\\]", addressLine1)
-  change(body, "\\[COMPANY ADDRESS LINE 2\\]", addressLine2)
-  change(body, "\\[POSITION\\]", position)
-}
+	flowables = []
 
-function revertTemplate() {
-  var ui = DocumentApp.getUi();
-  var doc = DocumentApp.getActiveDocument();
-  var body = doc.getBody();
-  var text = body.getText();
-  
-  // new 
-  var lines = text.split('\n');
-  var words = text.split(' ')
+	lines = formatted_pdf_text.split('\n')
 
-  change(body, lines[3],"[DATE]")
-  change(body, lines[5],"[COMPANY NAME]")
-  change(body, lines[6],"[COMPANY ADDRESS LINE 1]")
-  change(body, lines[7],"[COMPANY ADDRESS LINE 2]")
+	for i, line in enumerate(lines):
+		paragraph = None
+		if i == 0: 
+			paragraph = Paragraph(line, centered_style)
+		elif i == 1:
+			centered_style.fontSize = 10 
+			paragraph = Paragraph(line, centered_style)
+		elif len(lines) - 2 <= i <= len(lines) - 1 or "Sincerely" in line:
+			paragraph = Paragraph(line, right_aligned_style)
+		else: 
+			paragraph = Paragraph(line, default_style)
 
-  var startPositionInd = words.findIndex(word => word === "successful") + 1
+		flowables.append(paragraph)
 
-  res = ""
-  while (words[startPositionInd] != "at") {
-    res += words[startPositionInd] + " "
-    startPositionInd += 1
-  }
+		
+		if i == 0:
+			flowables.append(Spacer(1, 20))  # Add some space after each part
+		
+		if not(5 <= i < 7):
+			flowables.append(Spacer(1, 6))  # Add some space after each part
 
-  res = res.trim()
-  change(body, res, "[POSITION]")
+		
+	document.build(flowables)
+       
+def main(): 
+	if 	( 	len(sys.argv) == 1
+			or
+			len(sys.argv) == 2 and sys.argv[1] ==  '-h' 
+		):
+		print('formatter.py - usage: formatter.py <company_name> <addr_line1> <addr_line2> <position>') 
+		return
+	coverTemplatePath = 'main.txt'
+	output_path = "KevinAguirre_coverletter.pdf"
 
-}
 
-function onOpen() {
-  var ui = DocumentApp.getUi();
-  ui.createMenu('Cover Letter Formatter')
-      .addItem('Format Template', 'formatTemplate')
-      .addItem('Revert to Template', 'revertTemplate')
-      .addToUi();
-}
+	content = ''
+	with open(coverTemplatePath, 'r') as file: content = file.read()
+	
+	formatted_pdf_text = format_template_for_company(content, sys.argv)
+	create_pdf(formatted_pdf_text, output_path)
+
+if __name__ == '__main__':
+    main()
+    
+
