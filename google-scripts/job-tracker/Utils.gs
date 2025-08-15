@@ -1,7 +1,7 @@
 // given a date string, calculates the difference in days 
 function calculateDaysDifference(dateString) {
   const today = new Date()
-  const [day, month, year] = dateString.split("/").map(Number);
+  const [month, day, year] = dateString.split("/").map(Number);
   const parsedDate = new Date(year, month - 1, day);
   return (today.getTime() - parsedDate.getTime()) / (1000 * 60 * 60 * 24)
 }
@@ -11,7 +11,7 @@ function formatDate(date) {
   var day = String(date.getDate()).padStart(2, '0'); 
   var month = String(date.getMonth() + 1).padStart(2, '0'); 
   var year = date.getFullYear(); 
-  return day + '/' + month + '/' + year; 
+  return month + '/' + day + '/' + year; 
 }
 
 // handles retreiving value from input or default fields 
