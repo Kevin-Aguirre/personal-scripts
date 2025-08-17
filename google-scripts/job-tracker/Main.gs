@@ -1,13 +1,9 @@
 const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
+const sheetId = SpreadsheetApp.getActiveSpreadsheet().getId()
 const rules = sheet.getConditionalFormatRules();
 sheet.setConditionalFormatRules(rules)
 
 function addApplicationRow() {
-  if (isSpreadsheetEmpty()) {
-    sheet.appendRow(headers)
-    var header = sheet.getRange(1, 1, 1, sheet.getLastColumn())
-    formatHeader(header)
-  }
 
   var ui = SpreadsheetApp.getUi();
   
@@ -30,7 +26,41 @@ function addApplicationRow() {
     return
   }
 
+  if (isSpreadsheetEmpty()) {
+    sheet.appendRow(headers)
+    var header = sheet.getRange(1, 1, 1, sheet.getLastColumn())
+    formatHeader(header)
+  }
+  
   sheet.appendRow(defaultValues);
+
+   // --- Add folder creation logic ---
+  const company = defaultValues[headers.indexOf(HEADER_EMPLOYER)];  
+  const parentFolder = DriveApp.getFolderById(spreadsheetFolderId);
+  let companyFolder; 
+  const folders = parentFolder.getFoldersByName(company)
+  if (folders.hasNext()) {
+    companyFolder = folders.next()
+  } else {
+    companyFolder = parentFolder.createFolder(company)
+  }
+
+  const location = defaultValues[headers.indexOf(HEADER_LOCATION)]
+  const position = defaultValues[headers.indexOf(HEADER_POSITION)]; 
+  const folderName = `${position} - ${location}`;
+
+  const newFolder = companyFolder.createFolder(folderName);
+
+  // Copy resume template files into the new folder
+  const templateFolder = DriveApp.getFolderById(resumeTemplateFolderId);
+  const resumeFiles = templateFolder.getFilesByName("resume-master");
+
+  if (resumeFiles.hasNext()) {
+    resumeFiles.next().makeCopy("resume-master", newFolder)
+  }
+
+  // --- end ---
+
   const lastRowWithData = sheet.getLastRow();
   const statusColumnRange = sheet.getRange(2, headers.indexOf(HEADER_STATUS) + 1, lastRowWithData - 1, 1); 
 

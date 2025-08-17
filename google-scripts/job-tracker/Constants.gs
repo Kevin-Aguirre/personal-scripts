@@ -1,3 +1,6 @@
+const resumeTemplateFolderId = # folder id of resume master here 
+const spreadsheetFolderId = # folder id of spreadsheet here 
+
 const HEADER_POSITION = "Position"
 const HEADER_EMPLOYER = "Employer"
 const HEADER_LINKS = "Relevant Links"
@@ -74,7 +77,6 @@ const promptToDefault = {
   [promptApplicationStatus]: "Pending",
   [promptActionRequired]: "false",
   [promptInterviewsCompleted]: "0",
-  [promptLocation]: "",
   [promptPay]: "",
   [promptContact]: "",
   [promptNotes]: ""
